@@ -547,6 +547,8 @@
 <script>
 // ── DATA ──
 let data = JSON.parse(localStorage.getItem('lash_data') || '{"clientes":[],"atendimentos":[]}');
+if(!data.clientes) data.clientes = [];
+if(!data.atendimentos) data.atendimentos = [];
 let editingPagId = null, editingAtId = null;
 let _ultimoSalvo = 0;
 
@@ -578,7 +580,7 @@ function save() {
   if(fbAtivo && fbRef) {
     _ultimoSalvo = Date.now();
     setSyncStatus('🔄 Sincronizando...');
-    fbRef.set(data).then(() => setSyncStatus('✅ Sincronizado')).catch(() => setSyncStatus('⚠ Offline'));
+    fbRef.set(data).then(() => setSyncStatus('✅ Sincronizado')).catch(e => { console.error('Firebase save error:', e); setSyncStatus('⚠ Offline: ' + e.message); });
   }
 }
 
@@ -588,7 +590,7 @@ function carregarDoFirebase(callback) {
   fbRef.once('value').then(snap => {
     const remoto = snap.val();
     if(remoto && (remoto.atendimentos || remoto.clientes)) {
-      data = remoto;
+      data = { clientes: remoto.clientes || [], atendimentos: remoto.atendimentos || [] };
       localStorage.setItem('lash_data', JSON.stringify(data));
     } else if(data.atendimentos.length || data.clientes.length) {
       // nada na nuvem ainda, mas tem dado local: envia para a nuvem
@@ -596,7 +598,7 @@ function carregarDoFirebase(callback) {
     }
     setSyncStatus('✅ Sincronizado');
     callback();
-  }).catch(() => { setSyncStatus('⚠ Offline'); callback(); });
+  }).catch(e => { console.error('Firebase load error:', e); setSyncStatus('⚠ Offline: ' + e.message); callback(); });
 }
 
 function escutarFirebase() {
@@ -605,7 +607,7 @@ function escutarFirebase() {
     if(Date.now() - _ultimoSalvo < 4000) return; // ignora eco do próprio salvamento
     const remoto = snap.val();
     if(!remoto) return;
-    data = remoto;
+    data = { clientes: remoto.clientes || [], atendimentos: remoto.atendimentos || [] };
     localStorage.setItem('lash_data', JSON.stringify(data));
     refreshAll();
     setSyncStatus('✅ Sincronizado');
