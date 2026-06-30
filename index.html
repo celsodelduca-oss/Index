@@ -288,7 +288,10 @@
 
 <header>
   <div class="logo">✦ LASH <span>STUDIO</span></div>
-  <div class="header-date" id="headerDate"></div>
+  <div style="text-align:right">
+    <div class="header-date" id="headerDate"></div>
+    <div id="syncStatus" style="font-size:10px;opacity:.7;margin-top:2px"></div>
+  </div>
 </header>
 
 <!-- Desktop nav -->
@@ -328,7 +331,10 @@
 
     <!-- HISTÓRICO 30 -->
     <div class="card">
-      <div class="card-title">🕐 Últimos 30 Atendimentos</div>
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>🕐 Últimos 30 Atendimentos</span>
+        <button onclick="limparHistorico()" style="background:none;border:none;color:var(--rose);font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation">🗑 Limpar tudo</button>
+      </div>
       <div id="listaHist"></div>
       <div id="emptyHist" class="empty" style="display:none"><div class="icon">📋</div>Nenhum atendimento registrado ainda.</div>
     </div>
@@ -535,11 +541,76 @@
 
 <div id="toast"></div>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
 // ── DATA ──
 let data = JSON.parse(localStorage.getItem('lash_data') || '{"clientes":[],"atendimentos":[]}');
 let editingPagId = null, editingAtId = null;
-function save() { localStorage.setItem('lash_data', JSON.stringify(data)); }
+let _ultimoSalvo = 0;
+
+// ── FIREBASE ──
+const firebaseConfig = {
+  apiKey: "AIzaSyCOMMGBmbG3_IGTshA8qLP9CVR8g-yyKyw",
+  authDomain: "atendimento-cilios.firebaseapp.com",
+  databaseURL: "https://atendimento-cilios-default-rtdb.firebaseio.com",
+  projectId: "atendimento-cilios",
+  storageBucket: "atendimento-cilios.firebasestorage.app",
+  messagingSenderId: "1007757069756",
+  appId: "1:1007757069756:web:cbc763e345d7221eb7efb9"
+};
+let fbAtivo = false;
+let fbRef = null;
+try {
+  firebase.initializeApp(firebaseConfig);
+  fbRef = firebase.database().ref('lash_data');
+  fbAtivo = true;
+} catch(e) { fbAtivo = false; }
+
+function setSyncStatus(txt) {
+  const el = document.getElementById('syncStatus');
+  if(el) el.textContent = txt;
+}
+
+function save() {
+  localStorage.setItem('lash_data', JSON.stringify(data));
+  if(fbAtivo && fbRef) {
+    _ultimoSalvo = Date.now();
+    setSyncStatus('🔄 Sincronizando...');
+    fbRef.set(data).then(() => setSyncStatus('✅ Sincronizado')).catch(() => setSyncStatus('⚠ Offline'));
+  }
+}
+
+function carregarDoFirebase(callback) {
+  if(!fbAtivo || !fbRef) { callback(); return; }
+  setSyncStatus('🔄 Carregando...');
+  fbRef.once('value').then(snap => {
+    const remoto = snap.val();
+    if(remoto && (remoto.atendimentos || remoto.clientes)) {
+      data = remoto;
+      localStorage.setItem('lash_data', JSON.stringify(data));
+    } else if(data.atendimentos.length || data.clientes.length) {
+      // nada na nuvem ainda, mas tem dado local: envia para a nuvem
+      fbRef.set(data);
+    }
+    setSyncStatus('✅ Sincronizado');
+    callback();
+  }).catch(() => { setSyncStatus('⚠ Offline'); callback(); });
+}
+
+function escutarFirebase() {
+  if(!fbAtivo || !fbRef) return;
+  fbRef.on('value', snap => {
+    if(Date.now() - _ultimoSalvo < 4000) return; // ignora eco do próprio salvamento
+    const remoto = snap.val();
+    if(!remoto) return;
+    data = remoto;
+    localStorage.setItem('lash_data', JSON.stringify(data));
+    refreshAll();
+    setSyncStatus('✅ Sincronizado');
+  });
+}
 
 // ── INIT ──
 window.addEventListener('DOMContentLoaded', () => {
@@ -563,7 +634,10 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   highlightGroup('payOptsNovo','pagamento');
-  refreshAll();
+  carregarDoFirebase(() => {
+    refreshAll();
+    escutarFirebase();
+  });
 });
 
 function refreshAll() {
@@ -751,6 +825,7 @@ function renderHist() {
         <div class="hist-val">R$ ${a.valor.toFixed(2)}</div>
         <div class="hist-date">${dt}</div>
         <button class="hist-edit" onclick="openModalEdit(${a.id})" title="Editar">✏</button>
+        <button class="hist-edit" onclick="excluirAt(${a.id})" title="Excluir" style="color:var(--rose-dk)">🗑</button>
       </div>
     </div>`;
   });
@@ -767,6 +842,14 @@ function excluirAt(id) {
   if(!confirm('Remover este atendimento?')) return;
   data.atendimentos = data.atendimentos.filter(a => a.id !== id);
   save(); refreshAll(); toast('Atendimento removido.');
+}
+
+function limparHistorico() {
+  if(!data.atendimentos.length) { toast('Não há atendimentos para limpar.'); return; }
+  if(!confirm('Tem certeza que deseja apagar TODOS os atendimentos? Essa ação não pode ser desfeita.')) return;
+  if(!confirm('Confirma mesmo? Todos os registros de agenda, histórico e valores serão perdidos.')) return;
+  data.atendimentos = [];
+  save(); refreshAll(); toast('Todos os atendimentos foram removidos.');
 }
 
 // ── STATS ──
