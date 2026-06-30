@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2C2326">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lash Studio">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232C2326'/%3E%3Ctext x='50' y='66' font-size='52' text-anchor='middle' fill='%23C9A96E' font-family='Georgia,serif'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232C2326'/%3E%3Ctext x='50' y='66' font-size='52' text-anchor='middle' fill='%23C9A96E' font-family='Georgia,serif'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
+<title>Lash Studio</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --rose:    #C8788A;
+    --rose-lt: #F2D9DE;
+    --rose-dk: #9E4E62;
+    --gold:    #C9A96E;
+    --cream:   #FAF7F4;
+    --ink:     #2C2326;
+    --muted:   #8A7478;
+    --white:   #FFFFFF;
+    --green:   #6BAA8E;
+    --red:     #C86A6A;
+    --amber:   #D4953A;
+    --purple:  #7986cb;
+    --border:  #EAE0E3;
+    --shadow:  0 2px 16px rgba(44,35,38,.08);
+    --bottom-nav: 64px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; padding-bottom: calc(var(--bottom-nav) + env(safe-area-inset-bottom)); }
+
+  /* ── HEADER ── */
+  html { overscroll-behavior-y: none; }
+  body.modal-open { overflow: hidden; position: fixed; width: 100%; }
+  header {
+    background: var(--ink); color: var(--white);
+    padding: env(safe-area-inset-top) 20px 0;
+    padding-top: calc(env(safe-area-inset-top) + 0px);
+    display: flex; align-items: center;
+    justify-content: space-between; height: calc(56px + env(safe-area-inset-top));
+    position: sticky; top: 0; z-index: 100;
+  }
+  .btn, .act-btn, .bottom-nav button, .top-nav button, .pay-opt, .hist-edit, .modal-close {
+    touch-action: manipulation;
+  }
+  .bottom-nav { padding-bottom: env(safe-area-inset-bottom); height: calc(var(--bottom-nav) + env(safe-area-inset-bottom)); }
+  .logo { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 300; letter-spacing: 2px; color: var(--gold); }
+  .logo span { color: var(--white); font-weight: 600; }
+  .header-date { font-size: 11px; color: var(--muted); letter-spacing: .5px; }
+
+  /* ── BOTTOM NAV (mobile-first) ── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--white); border-top: 1px solid var(--border);
+    display: flex; z-index: 100;
+    box-shadow: 0 -4px 20px rgba(44,35,38,.10);
+    height: var(--bottom-nav);
+  }
+  .bottom-nav button {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3px; border: none; background: none;
+    cursor: pointer; padding: 6px 4px; font-family: 'Inter', sans-serif;
+    font-size: 10px; color: var(--muted); transition: color .2s;
+    border-top: 2px solid transparent;
+  }
+  .bottom-nav button .nav-icon { font-size: 20px; line-height: 1; }
+  .bottom-nav button.active { color: var(--rose-dk); border-top-color: var(--rose); background: var(--rose-lt); }
+  .bottom-nav button .badge-dot {
+    position: absolute; top: 6px; right: calc(50% - 14px);
+    width: 8px; height: 8px; border-radius: 50%; background: var(--amber); display: none;
+  }
+  .bottom-nav button.has-alert .badge-dot { display: block; }
+
+  /* ── LAYOUT ── */
+  main { max-width: 680px; margin: 0 auto; padding: 16px 14px 8px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── CARDS ── */
+  .card { background: var(--white); border-radius: 14px; border: 1px solid var(--border); box-shadow: var(--shadow); padding: 18px; margin-bottom: 16px; }
+  .card-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; color: var(--rose-dk); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  /* ── STAT GRID ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat-grid.five { grid-template-columns: repeat(2, 1fr); }
+  .stat { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 14px 12px; text-align: center; box-shadow: var(--shadow); }
+  .stat-val { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 600; color: var(--rose-dk); line-height: 1; }
+  .stat-label { font-size: 10px; color: var(--muted); margin-top: 5px; letter-spacing: .8px; text-transform: uppercase; line-height: 1.3; }
+
+  /* ── PREVIEW BOX ── */
+  .preview-box {
+    background: linear-gradient(135deg, var(--rose-lt), #fff8fa);
+    border: 1px solid var(--rose); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 16px;
+    display: none; gap: 0; flex-direction: column;
+  }
+  .preview-box.show { display: flex; }
+  .preview-title { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .preview-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; }
+  .preview-row + .preview-row { border-top: 1px dashed var(--rose-lt); }
+  .preview-label { font-size: 12px; color: var(--rose-dk); }
+  .preview-val { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: var(--rose-dk); }
+  .preview-val.green { color: var(--green); }
+  .preview-val.amber { color: var(--amber); }
+
+  /* ── FORMS ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; }
+  input, select, textarea {
+    padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 16px; color: var(--ink);
+    background: var(--cream); transition: border-color .2s; outline: none;
+    width: 100%; -webkit-appearance: none; appearance: none;
+  }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238A7478' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  input:focus, select:focus { border-color: var(--rose); background: var(--white); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 13px 20px; border-radius: 10px; font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all .2s;
+    min-height: 48px; /* touch target */
+  }
+  .btn-primary { background: var(--rose); color: var(--white); }
+  .btn-primary:active { background: var(--rose-dk); transform: scale(.98); }
+  .btn-outline { background: transparent; border: 1.5px solid var(--rose); color: var(--rose-dk); }
+  .btn-outline:active { background: var(--rose-lt); }
+  .btn-full { width: 100%; }
+  .btn-row { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .btn-row .btn-primary { flex: 2; }
+  .btn-row .btn-outline { flex: 1; }
+
+  /* ── TOUCH ACTION BUTTONS ── */
+  .act-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
+    cursor: pointer; border: none; transition: all .2s; min-height: 36px;
+    font-family: 'Inter', sans-serif;
+  }
+  .act-edit  { background: #fdf3e0; color: #8a6200; border: 1px solid #e8c97a; }
+  .act-pay   { background: #d6f5e8; color: #2a7a55; border: 1px solid #8ecfb0; }
+  .act-del   { background: #fdeaea; color: var(--red); border: 1px solid #f0a0a0; }
+  .act-btn:active { opacity: .7; transform: scale(.96); }
+
+  /* ── BADGES ── */
+  .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: .3px; white-space: nowrap; }
+  .badge-pago     { background: #d6f5e8; color: #2a7a55; }
+  .badge-pendente { background: #fde8cc; color: #8a4d0a; }
+  .badge-ext      { background: var(--rose-lt); color: var(--rose-dk); }
+  .badge-man      { background: #e8eaf6; color: #3949ab; }
+  .badge-permuta  { background: #e8f5e9; color: #2e7d32; }
+
+  /* ── PAY PANEL ── */
+  .pay-panel { border: 1px solid var(--border); border-radius: 10px; padding: 14px; background: var(--cream); margin-top: 12px; }
+  .pay-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .pay-opt {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; border-radius: 10px; cursor: pointer;
+    border: 1.5px solid var(--border); background: var(--white);
+    font-size: 13px; font-weight: 500; transition: all .2s;
+    min-height: 44px; /* touch target */
+  }
+  .pay-opt input[type=radio] { accent-color: var(--rose); width: 16px; height: 16px; flex-shrink: 0; }
+  .pay-opt.selected { border-color: var(--rose); background: var(--rose-lt); color: var(--rose-dk); }
+
+  /* ── AT CARD (mobile atendimento) ── */
+  .at-card {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; margin-bottom: 10px;
+    box-shadow: 0 1px 6px rgba(44,35,38,.06);
+  }
+  .at-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .at-card-nome { font-weight: 600; font-size: 15px; color: var(--ink); }
+  .at-card-hora { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .at-card-mid { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+  .at-card-valor { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: var(--rose-dk); margin-left: auto; }
+  .at-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ── HIST CARD ── */
+  .hist-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px;
+    margin-bottom: 8px; background: var(--white);
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  .hist-left { flex: 1; min-width: 0; }
+  .hist-nome { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hist-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .hist-right { text-align: right; flex-shrink: 0; }
+  .hist-val { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; color: var(--rose-dk); }
+  .hist-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .hist-edit { background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px; color: var(--muted); }
+
+  /* ── FILTER BAR ── */
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filter-bar input, .filter-bar select { flex: 1; min-width: 120px; font-size: 14px; }
+
+  /* ── RESUMO ── */
+  .resumo-period { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+  .resumo-period select { flex: 1; min-width: 100px; }
+  .resumo-period input[type=date] { flex: 1; min-width: 130px; }
+  .proc-bar-fill { height: 8px; border-radius: 4px; background: var(--rose); }
+  .proc-bar-fill.man { background: var(--purple); }
+  .section-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; margin-top: 20px; }
+
+  /* ── CLIENTE CARD ── */
+  .cl-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; background: var(--white); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .cl-nome { font-weight: 600; font-size: 14px; }
+  .cl-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── MODAL ── */
+  .modal-bg {
+    display: none; position: fixed; inset: 0;
+    background: rgba(44,35,38,.55); z-index: 200;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 20px 20px 0 0;
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+    width: 100%; max-width: 600px;
+    max-height: 92vh; overflow-y: auto;
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 18px; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--rose-dk); }
+  .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted); padding: 4px; min-width: 36px; min-height: 36px; }
+
+  /* ── EMPTY ── */
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; }
+  .empty .icon { font-size: 36px; margin-bottom: 8px; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: calc(var(--bottom-nav) + 14px); left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--white); padding: 11px 22px;
+    border-radius: 24px; font-size: 13px; font-weight: 500;
+    opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 300;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+
+  /* ── SECTION DIVIDER ── */
+  .section-sep { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* ── DESKTOP overrides ── */
+  @media(min-width: 680px) {
+    :root { --bottom-nav: 0px; }
+    body { padding-bottom: 0; }
+    .bottom-nav { display: none; }
+    header { height: 60px; padding: 0 32px; }
+    .top-nav { display: flex !important; background: var(--white); border-bottom: 1px solid var(--border); padding: 0 32px; gap: 4px; }
+    main { max-width: 1000px; padding: 28px 24px; }
+    .stat-grid { grid-template-columns: repeat(5, 1fr); }
+    .stat-grid.five { grid-template-columns: repeat(5, 1fr); }
+    .pay-options { grid-template-columns: repeat(5, 1fr); }
+    .modal-bg { align-items: center; }
+    .modal { border-radius: 14px; max-width: 560px; padding: 28px; }
+    .modal-handle { display: none; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    #toast { bottom: 28px; }
+  }
+
+  /* ── TOP NAV (desktop only) ── */
+  .top-nav { display: none; }
+  .top-nav button {
+    background: none; border: none; cursor: pointer;
+    padding: 16px 18px; font-family: 'Inter', sans-serif; font-size: 13px;
+    font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent;
+    transition: all .2s; white-space: nowrap;
+  }
+  .top-nav button.active { color: var(--rose-dk); border-bottom-color: var(--rose); }
+  .top-nav button:hover { color: var(--rose); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">✦ LASH <span>STUDIO</span></div>
+  <div class="header-date" id="headerDate"></div>
+</header>
+
+<!-- Desktop nav -->
+<nav class="top-nav" id="topNav">
+  <button class="active" onclick="showPage('agenda')">✦ Agenda</button>
+  <button onclick="showPage('novo')">＋ Atendimento</button>
+  <button onclick="showPage('clientes')">Clientes</button>
+  <button onclick="showPage('pendentes')">⚠ Pendentes</button>
+  <button onclick="showPage('resumo')">📊 Resumo</button>
+</nav>
+
+<main>
+
+  <!-- ══ AGENDA ══ -->
+  <div id="page-agenda" class="page active">
+    <div id="statsBar" class="stat-grid five"></div>
+    <div id="previewHoje" class="preview-box">
+      <div class="preview-title">💰 Faturamento do dia</div>
+      <div class="preview-row"><span class="preview-label">Total faturado</span><span class="preview-val" id="pvTotal">R$ 0,00</span></div>
+      <div class="preview-row"><span class="preview-label">Já recebido</span><span class="preview-val green" id="pvRecebido">R$ 0,00</span></div>
+      <div class="preview-row" id="pvPendRow"><span class="preview-label">Pendente</span><span class="preview-val amber" id="pvPendente">R$ 0,00</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📅 Hoje</div>
+      <div class="filter-bar">
+        <input type="text" id="searchAgenda" placeholder="🔍 Buscar cliente..." oninput="renderAgenda()">
+        <select id="filterProc" onchange="renderAgenda()">
+          <option value="">Todos</option>
+          <option value="Extensão">Extensão</option>
+          <option value="Manutenção">Manutenção</option>
+        </select>
+      </div>
+      <div id="listaAgenda"></div>
+      <div id="emptyAgenda" class="empty" style="display:none"><div class="icon">🌸</div>Nenhum atendimento hoje.</div>
+    </div>
+
+    <!-- HISTÓRICO 30 -->
+    <div class="card">
+      <div class="card-title">🕐 Últimos 30 Atendimentos</div>
+      <div id="listaHist"></div>
+      <div id="emptyHist" class="empty" style="display:none"><div class="icon">📋</div>Nenhum atendimento registrado ainda.</div>
+    </div>
+  </div>
+
+  <!-- ══ NOVO ATENDIMENTO ══ -->
+  <div id="page-novo" class="page">
+    <div class="card">
+      <div class="card-title">✦ Novo Atendimento</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Cliente cadastrada</label>
+          <select id="atCliente">
+            <option value="">— Selecionar —</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Ou nome rápido (sem cadastro)</label>
+          <input type="text" id="atNomeRapido" placeholder="Nome da cliente">
+        </div>
+        <div class="form-group">
+          <label>Procedimento</label>
+          <select id="atProc">
+            <option value="Extensão">Extensão</option>
+            <option value="Manutenção">Manutenção</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Horário</label>
+          <input type="time" id="atHora">
+        </div>
+        <div class="form-group">
+          <label>Valor (R$)</label>
+          <input type="number" id="atValor" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="form-group">
+          <label>Data</label>
+          <input type="date" id="atData">
+        </div>
+      </div>
+      <div class="pay-panel">
+        <label style="display:block;margin-bottom:2px">Pagamento</label>
+        <div class="pay-options" id="payOptsNovo">
+          <label class="pay-opt"><input type="radio" name="pagamento" value="pendente" checked onchange="highlightGroup('payOptsNovo','pagamento')"> ⏳ Pendente</label>
+          <label class="pay-opt"><input type="radio" name="pagamento" value="dinheiro" onchange="highlightGroup('payOptsNovo','pagamento')"> 💵 Dinheiro</label>
+          <label class="pay-opt"><input type="radio" name="pagamento" value="pix" onchange="highlightGroup('payOptsNovo','pagamento')"> ⚡ Pix</label>
+          <label class="pay-opt"><input type="radio" name="pagamento" value="cartao" onchange="highlightGroup('payOptsNovo','pagamento')"> 💳 Cartão</label>
+          <label class="pay-opt"><input type="radio" name="pagamento" value="permuta" onchange="highlightGroup('payOptsNovo','pagamento')"> 🔄 Permuta</label>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="salvarAtendimento()">✦ Salvar</button>
+        <button class="btn btn-outline" onclick="limparFormAt()">Limpar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CLIENTES ══ -->
+  <div id="page-clientes" class="page">
+    <div class="card">
+      <div class="card-title">🌸 Nova Cliente</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Nome</label><input type="text" id="clNome" placeholder="Nome"></div>
+        <div class="form-group"><label>Sobrenome</label><input type="text" id="clSob" placeholder="Sobrenome"></div>
+        <div class="form-group"><label>Telefone</label><input type="tel" id="clTel" placeholder="(00) 00000-0000"></div>
+        <div class="form-group"><label>E-mail</label><input type="email" id="clEmail" placeholder="email@exemplo.com"></div>
+        <div class="form-group full"><label>Data de Aniversário</label><input type="date" id="clAniv"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary btn-full" onclick="salvarCliente()">＋ Cadastrar Cliente</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Lista de Clientes</div>
+      <div class="filter-bar"><input type="text" id="searchCliente" placeholder="🔍 Buscar..." oninput="renderClientes()"></div>
+      <div id="listaClientes"></div>
+      <div id="emptyClientes" class="empty" style="display:none"><div class="icon">🌸</div>Nenhuma cliente cadastrada ainda.</div>
+    </div>
+  </div>
+
+  <!-- ══ PENDENTES ══ -->
+  <div id="page-pendentes" class="page">
+    <div class="card">
+      <div class="card-title">⚠ Pagamentos Pendentes</div>
+      <div id="listaPendentes"></div>
+      <div id="emptyPendentes" class="empty" style="display:none"><div class="icon">✅</div>Tudo em dia! Nenhum pagamento pendente.</div>
+    </div>
+  </div>
+
+  <!-- ══ RESUMO ══ -->
+  <div id="page-resumo" class="page">
+    <div class="card">
+      <div class="card-title">📊 Resumo</div>
+      <div class="resumo-period">
+        <select id="resMes" onchange="renderResumo()"></select>
+        <select id="resAno" onchange="renderResumo()"></select>
+        <input type="date" id="resDia" onchange="renderResumo()" title="Filtrar por dia específico">
+        <button class="btn btn-outline" style="padding:10px 14px;font-size:12px;min-height:44px" onclick="limparFiltroDia()">Mês completo</button>
+      </div>
+      <div id="resumoContent"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── BOTTOM NAV (mobile) ── -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="active" onclick="showPage('agenda')" id="bnAgenda">
+    <div class="badge-dot"></div>
+    <span class="nav-icon">📅</span>
+    <span>Agenda</span>
+  </button>
+  <button onclick="showPage('novo')" id="bnNovo">
+    <span class="nav-icon">＋</span>
+    <span>Novo</span>
+  </button>
+  <button onclick="showPage('clientes')" id="bnClientes">
+    <span class="nav-icon">👤</span>
+    <span>Clientes</span>
+  </button>
+  <button onclick="showPage('pendentes')" id="bnPendentes">
+    <div class="badge-dot"></div>
+    <span class="nav-icon">⚠</span>
+    <span>Pendentes</span>
+  </button>
+  <button onclick="showPage('resumo')" id="bnResumo">
+    <span class="nav-icon">📊</span>
+    <span>Resumo</span>
+  </button>
+</nav>
+
+<!-- MODAL PAGAMENTO -->
+<div class="modal-bg" id="modalPag">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Registrar Pagamento</div>
+      <button class="modal-close" onclick="closeModal('modalPag')">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px" id="modalPagInfo"></p>
+    <label style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase">Forma de Pagamento</label>
+    <div class="pay-options" id="payOptsPag" style="margin-top:10px">
+      <label class="pay-opt"><input type="radio" name="mpag" value="dinheiro" onchange="highlightGroup('payOptsPag','mpag')"> 💵 Dinheiro</label>
+      <label class="pay-opt"><input type="radio" name="mpag" value="pix" onchange="highlightGroup('payOptsPag','mpag')"> ⚡ Pix</label>
+      <label class="pay-opt"><input type="radio" name="mpag" value="cartao" onchange="highlightGroup('payOptsPag','mpag')"> 💳 Cartão</label>
+      <label class="pay-opt"><input type="radio" name="mpag" value="permuta" onchange="highlightGroup('payOptsPag','mpag')"> 🔄 Permuta</label>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="confirmarPagamento()">✔ Confirmar</button>
+      <button class="btn btn-outline" onclick="closeModal('modalPag')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal-bg" id="modalEdit">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">✏ Editar Atendimento</div>
+      <button class="modal-close" onclick="closeModal('modalEdit')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Nome da Cliente</label>
+        <input type="text" id="editNome" placeholder="Nome da cliente">
+      </div>
+      <div class="form-group">
+        <label>Procedimento</label>
+        <select id="editProc">
+          <option value="Extensão">Extensão</option>
+          <option value="Manutenção">Manutenção</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Horário</label>
+        <input type="time" id="editHora">
+      </div>
+      <div class="form-group">
+        <label>Valor (R$)</label>
+        <input type="number" id="editValor" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" id="editData">
+      </div>
+    </div>
+    <div class="pay-panel" style="margin-top:14px">
+      <label style="display:block;margin-bottom:2px">Pagamento</label>
+      <div class="pay-options" id="payOptsEdit">
+        <label class="pay-opt"><input type="radio" name="editpag" value="pendente" onchange="highlightGroup('payOptsEdit','editpag')"> ⏳ Pendente</label>
+        <label class="pay-opt"><input type="radio" name="editpag" value="dinheiro" onchange="highlightGroup('payOptsEdit','editpag')"> 💵 Dinheiro</label>
+        <label class="pay-opt"><input type="radio" name="editpag" value="pix" onchange="highlightGroup('payOptsEdit','editpag')"> ⚡ Pix</label>
+        <label class="pay-opt"><input type="radio" name="editpag" value="cartao" onchange="highlightGroup('payOptsEdit','editpag')"> 💳 Cartão</label>
+        <label class="pay-opt"><input type="radio" name="editpag" value="permuta" onchange="highlightGroup('payOptsEdit','editpag')"> 🔄 Permuta</label>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="salvarEdicao()">✔ Salvar</button>
+      <button class="btn btn-outline" onclick="closeModal('modalEdit')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── DATA ──
+let data = JSON.parse(localStorage.getItem('lash_data') || '{"clientes":[],"atendimentos":[]}');
+let editingPagId = null, editingAtId = null;
+function save() { localStorage.setItem('lash_data', JSON.stringify(data)); }
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded', () => {
+  const hoje = new Date();
+  document.getElementById('headerDate').textContent =
+    hoje.toLocaleDateString('pt-BR', {weekday:'short', day:'2-digit', month:'short'});
+
+  const hh = String(hoje.getHours()).padStart(2,'0');
+  const mm = String(hoje.getMinutes()).padStart(2,'0');
+  document.getElementById('atHora').value = `${hh}:${mm}`;
+  document.getElementById('atData').value = hoje.toISOString().split('T')[0];
+
+  const selMes = document.getElementById('resMes');
+  ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+    .forEach((m,i) => { const o = document.createElement('option'); o.value=i; o.textContent=m; selMes.appendChild(o); });
+  selMes.value = hoje.getMonth();
+
+  const selAno = document.getElementById('resAno');
+  for(let y = hoje.getFullYear(); y >= 2024; y--) {
+    const o = document.createElement('option'); o.value=y; o.textContent=y; selAno.appendChild(o);
+  }
+
+  highlightGroup('payOptsNovo','pagamento');
+  refreshAll();
+});
+
+function refreshAll() {
+  renderAgenda(); renderHist(); renderClientes(); renderPendentes();
+  renderStats(); renderResumo(); populateClienteSelect(); updateAlertDots();
+}
+
+// ── PAGES ──
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  // mobile nav
+  ['agenda','novo','clientes','pendentes','resumo'].forEach(p => {
+    const btn = document.getElementById('bn'+p.charAt(0).toUpperCase()+p.slice(1));
+    if(btn) btn.classList.toggle('active', p===id);
+  });
+  // desktop nav
+  document.querySelectorAll('.top-nav button').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick').includes("'"+id+"'"));
+  });
+  if(id==='agenda')    { renderAgenda(); renderHist(); }
+  if(id==='pendentes') renderPendentes();
+  if(id==='resumo')    renderResumo();
+  if(id==='clientes')  renderClientes();
+}
+
+function updateAlertDots() {
+  const pendQty = data.atendimentos.filter(a => a.pagamento==='pendente').length;
+  const btnPend = document.getElementById('bnPendentes');
+  if(btnPend) btnPend.classList.toggle('has-alert', pendQty > 0);
+}
+
+// ── HIGHLIGHT PAY ──
+function highlightGroup(cid, rname) {
+  const c = document.getElementById(cid);
+  if(!c) return;
+  c.querySelectorAll('.pay-opt').forEach(el => {
+    const inp = el.querySelector(`input[name="${rname}"]`);
+    el.classList.toggle('selected', inp && inp.checked);
+  });
+}
+
+// ── CLIENTES ──
+function salvarCliente() {
+  const nome = document.getElementById('clNome').value.trim();
+  if(!nome) { toast('Informe o nome da cliente.'); return; }
+  data.clientes.push({
+    id: Date.now(), nome, sobrenome: document.getElementById('clSob').value.trim(),
+    telefone: document.getElementById('clTel').value.trim(),
+    email: document.getElementById('clEmail').value.trim(),
+    aniversario: document.getElementById('clAniv').value,
+  });
+  save();
+  ['clNome','clSob','clTel','clEmail','clAniv'].forEach(id => document.getElementById(id).value='');
+  toast('Cliente cadastrada! 🌸'); refreshAll();
+}
+
+function renderClientes() {
+  const q = document.getElementById('searchCliente').value.toLowerCase();
+  const list = data.clientes.filter(c => (c.nome+' '+c.sobrenome).toLowerCase().includes(q));
+  const el = document.getElementById('listaClientes');
+  el.innerHTML = '';
+  document.getElementById('emptyClientes').style.display = list.length ? 'none' : 'block';
+  list.forEach(c => {
+    const aniv = c.aniversario ? new Date(c.aniversario+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '';
+    el.innerHTML += `<div class="cl-card">
+      <div>
+        <div class="cl-nome">${c.nome} ${c.sobrenome}</div>
+        <div class="cl-sub">${c.telefone||''} ${aniv?'· 🎂 '+aniv:''}</div>
+      </div>
+      <button class="act-btn act-del" onclick="excluirCliente(${c.id})">✕</button>
+    </div>`;
+  });
+}
+
+function excluirCliente(id) {
+  if(!confirm('Excluir esta cliente?')) return;
+  data.clientes = data.clientes.filter(c => c.id !== id);
+  save(); refreshAll(); toast('Cliente removida.');
+}
+
+function populateClienteSelect() {
+  const sel = document.getElementById('atCliente');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Selecionar —</option>';
+  data.clientes.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.id; o.textContent = `${c.nome} ${c.sobrenome}`;
+    sel.appendChild(o);
+  });
+  sel.value = cur;
+}
+
+// ── SALVAR ATENDIMENTO ──
+function salvarAtendimento() {
+  const clienteId = document.getElementById('atCliente').value;
+  const nomeRapido = document.getElementById('atNomeRapido').value.trim();
+  let nome = nomeRapido;
+  if(clienteId) {
+    const cl = data.clientes.find(c => c.id == clienteId);
+    nome = cl ? `${cl.nome} ${cl.sobrenome}` : nomeRapido;
+  }
+  if(!nome) { toast('Informe o nome ou selecione a cliente.'); return; }
+  const pagR = document.querySelector('#payOptsNovo input[name="pagamento"]:checked');
+  data.atendimentos.push({
+    id: Date.now(), clienteId: clienteId || null, nome,
+    procedimento: document.getElementById('atProc').value,
+    hora: document.getElementById('atHora').value,
+    data: document.getElementById('atData').value,
+    valor: parseFloat(document.getElementById('atValor').value) || 0,
+    pagamento: pagR ? pagR.value : 'pendente',
+  });
+  save(); limparFormAt(); toast('Atendimento salvo! ✦'); refreshAll(); showPage('agenda');
+}
+
+function limparFormAt() {
+  document.getElementById('atCliente').value = '';
+  document.getElementById('atNomeRapido').value = '';
+  document.getElementById('atValor').value = '';
+  const r = document.querySelector('#payOptsNovo input[value="pendente"]');
+  if(r) { r.checked = true; highlightGroup('payOptsNovo','pagamento'); }
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+// ── AGENDA ──
+function renderAgenda() {
+  const q    = document.getElementById('searchAgenda').value.toLowerCase();
+  const proc = document.getElementById('filterProc').value;
+  const list = data.atendimentos.filter(a =>
+    a.data === today() && a.nome.toLowerCase().includes(q) && (!proc || a.procedimento === proc)
+  ).sort((a,b) => a.hora.localeCompare(b.hora));
+
+  const el = document.getElementById('listaAgenda');
+  el.innerHTML = '';
+  document.getElementById('emptyAgenda').style.display = list.length ? 'none' : 'block';
+
+  list.forEach((a,i) => {
+    el.innerHTML += `<div class="at-card">
+      <div class="at-card-top">
+        <div>
+          <div class="at-card-nome">${i+1}. ${a.nome}</div>
+          <div class="at-card-hora">🕐 ${a.hora}</div>
+        </div>
+        <div class="at-card-valor">R$ ${a.valor.toFixed(2)}</div>
+      </div>
+      <div class="at-card-mid">
+        <span class="badge ${a.procedimento==='Extensão'?'badge-ext':'badge-man'}">${a.procedimento}</span>
+        ${pagBadge(a.pagamento)}
+      </div>
+      <div class="at-card-actions">
+        <button class="act-btn act-edit" onclick="openModalEdit(${a.id})">✏ Editar</button>
+        ${a.pagamento==='pendente' ? `<button class="act-btn act-pay" onclick="openModalPag(${a.id})">💳 Pagar</button>` : ''}
+        <button class="act-btn act-del" onclick="excluirAt(${a.id})">✕ Remover</button>
+      </div>
+    </div>`;
+  });
+
+  renderStats();
+}
+
+// ── HISTÓRICO 30 ──
+function renderHist() {
+  const list = [...data.atendimentos]
+    .sort((a,b) => b.data.localeCompare(a.data) || b.hora.localeCompare(a.hora))
+    .slice(0, 30);
+
+  const el = document.getElementById('listaHist');
+  el.innerHTML = '';
+  document.getElementById('emptyHist').style.display = list.length ? 'none' : 'block';
+
+  list.forEach(a => {
+    const isHoje = a.data === today();
+    const dt = isHoje ? 'Hoje, ' + a.hora :
+      new Date(a.data+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' + a.hora;
+    el.innerHTML += `<div class="hist-card">
+      <div class="hist-left">
+        <div class="hist-nome">${a.nome}</div>
+        <div class="hist-sub" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+          <span class="badge ${a.procedimento==='Extensão'?'badge-ext':'badge-man'}" style="font-size:10px">${a.procedimento}</span>
+          ${pagBadge(a.pagamento)}
+        </div>
+      </div>
+      <div class="hist-right">
+        <div class="hist-val">R$ ${a.valor.toFixed(2)}</div>
+        <div class="hist-date">${dt}</div>
+        <button class="hist-edit" onclick="openModalEdit(${a.id})" title="Editar">✏</button>
+      </div>
+    </div>`;
+  });
+}
+
+// ── BADGE ──
+function pagBadge(p) {
+  const map = {pendente:'⏳ Pendente', dinheiro:'💵 Dinheiro', pix:'⚡ Pix', cartao:'💳 Cartão', permuta:'🔄 Permuta'};
+  const cls = p==='pendente' ? 'badge-pendente' : (p==='permuta' ? 'badge-permuta' : 'badge-pago');
+  return `<span class="badge ${cls}">${map[p]||p}</span>`;
+}
+
+function excluirAt(id) {
+  if(!confirm('Remover este atendimento?')) return;
+  data.atendimentos = data.atendimentos.filter(a => a.id !== id);
+  save(); refreshAll(); toast('Atendimento removido.');
+}
+
+// ── STATS ──
+function renderStats() {
+  const hoje = data.atendimentos.filter(a => a.data === today());
+  const total    = hoje.length;
+  const ext      = hoje.filter(a => a.procedimento==='Extensão').length;
+  const man      = hoje.filter(a => a.procedimento==='Manutenção').length;
+  const recebido = hoje.filter(a => a.pagamento!=='pendente').reduce((s,a)=>s+a.valor,0);
+  const pendente = hoje.filter(a => a.pagamento==='pendente').reduce((s,a)=>s+a.valor,0);
+  const totalVal = hoje.reduce((s,a)=>s+a.valor,0);
+
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">Atend. hoje</div></div>
+    <div class="stat"><div class="stat-val">${ext}</div><div class="stat-label">Extensões</div></div>
+    <div class="stat"><div class="stat-val">${man}</div><div class="stat-label">Manutenções</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--green);font-size:20px">R$${recebido.toFixed(2)}</div><div class="stat-label">Recebido</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--amber);font-size:20px">R$${pendente.toFixed(2)}</div><div class="stat-label">Pendente</div></div>
+  `;
+
+  const prev = document.getElementById('previewHoje');
+  if(total > 0) {
+    prev.classList.add('show');
+    document.getElementById('pvTotal').textContent    = 'R$ ' + totalVal.toFixed(2);
+    document.getElementById('pvRecebido').textContent = 'R$ ' + recebido.toFixed(2);
+    document.getElementById('pvPendente').textContent = 'R$ ' + pendente.toFixed(2);
+    document.getElementById('pvPendRow').style.display = pendente > 0 ? 'flex' : 'none';
+  } else {
+    prev.classList.remove('show');
+  }
+}
+
+// ── PENDENTES ──
+function renderPendentes() {
+  const list = data.atendimentos.filter(a => a.pagamento==='pendente')
+    .sort((a,b) => b.data.localeCompare(a.data));
+  const el = document.getElementById('listaPendentes');
+  el.innerHTML = '';
+  document.getElementById('emptyPendentes').style.display = list.length ? 'none' : 'block';
+  list.forEach(a => {
+    const dt = new Date(a.data+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    el.innerHTML += `<div class="at-card">
+      <div class="at-card-top">
+        <div>
+          <div class="at-card-nome">${a.nome}</div>
+          <div class="at-card-hora">📅 ${dt} · 🕐 ${a.hora}</div>
+        </div>
+        <div class="at-card-valor">R$ ${a.valor.toFixed(2)}</div>
+      </div>
+      <div class="at-card-mid">
+        <span class="badge ${a.procedimento==='Extensão'?'badge-ext':'badge-man'}">${a.procedimento}</span>
+      </div>
+      <div class="at-card-actions">
+        <button class="act-btn act-pay" onclick="openModalPag(${a.id})">💳 Registrar Pagamento</button>
+        <button class="act-btn act-edit" onclick="openModalEdit(${a.id})">✏ Editar</button>
+      </div>
+    </div>`;
+  });
+}
+
+// ── MODAL PAGAMENTO ──
+function openModalPag(id) {
+  editingPagId = id;
+  const a = data.atendimentos.find(x => x.id === id);
+  document.getElementById('modalPagInfo').textContent = `${a.nome} — ${a.procedimento} — R$ ${a.valor.toFixed(2)}`;
+  document.querySelectorAll('input[name="mpag"]').forEach(r => r.checked = false);
+  highlightGroup('payOptsPag','mpag');
+  document.getElementById('modalPag').classList.add('open');
+  document.body.classList.add('modal-open');
+}
+function confirmarPagamento() {
+  const r = document.querySelector('input[name="mpag"]:checked');
+  if(!r) { toast('Selecione a forma de pagamento.'); return; }
+  const at = data.atendimentos.find(a => a.id === editingPagId);
+  if(at) { at.pagamento = r.value; save(); }
+  closeModal('modalPag'); refreshAll(); toast('Pagamento registrado! ✦');
+}
+
+// ── MODAL EDITAR ──
+function openModalEdit(id) {
+  editingAtId = id;
+  const a = data.atendimentos.find(x => x.id === id);
+  document.getElementById('editNome').value  = a.nome;
+  document.getElementById('editProc').value  = a.procedimento;
+  document.getElementById('editHora').value  = a.hora;
+  document.getElementById('editValor').value = a.valor;
+  document.getElementById('editData').value  = a.data;
+  document.querySelectorAll('input[name="editpag"]').forEach(x => x.checked = false);
+  const r = document.querySelector(`#payOptsEdit input[value="${a.pagamento}"]`);
+  if(r) r.checked = true;
+  highlightGroup('payOptsEdit','editpag');
+  document.getElementById('modalEdit').classList.add('open');
+  document.body.classList.add('modal-open');
+}
+function salvarEdicao() {
+  const at = data.atendimentos.find(a => a.id === editingAtId);
+  if(!at) return;
+  const nome = document.getElementById('editNome').value.trim();
+  if(!nome) { toast('Informe o nome da cliente.'); return; }
+  const pagR = document.querySelector('input[name="editpag"]:checked');
+  at.nome = nome;
+  at.procedimento = document.getElementById('editProc').value;
+  at.hora  = document.getElementById('editHora').value;
+  at.valor = parseFloat(document.getElementById('editValor').value) || 0;
+  at.data  = document.getElementById('editData').value;
+  at.pagamento = pagR ? pagR.value : at.pagamento;
+  save(); closeModal('modalEdit'); refreshAll(); toast('Atendimento atualizado! ✦');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.classList.remove('modal-open');
+  editingPagId = null; editingAtId = null;
+}
+
+// ── RESUMO ──
+function limparFiltroDia() { document.getElementById('resDia').value = ''; renderResumo(); }
+function filtrarDia(ds) { document.getElementById('resDia').value = ds; renderResumo(); }
+
+function renderResumo() {
+  const mes = parseInt(document.getElementById('resMes').value);
+  const ano = parseInt(document.getElementById('resAno').value);
+  const dia = document.getElementById('resDia').value;
+
+  let list = data.atendimentos.filter(a => {
+    const d = new Date(a.data+'T00:00:00');
+    return d.getMonth()===mes && d.getFullYear()===ano;
+  });
+
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  let label = `${meses[mes]} ${ano}`;
+  if(dia) {
+    list = list.filter(a => a.data === dia);
+    label = new Date(dia+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  }
+
+  const total    = list.length;
+  const ext      = list.filter(a => a.procedimento==='Extensão').length;
+  const man      = list.filter(a => a.procedimento==='Manutenção').length;
+  const recebido = list.filter(a => a.pagamento!=='pendente').reduce((s,a)=>s+a.valor,0);
+  const pendente = list.filter(a => a.pagamento==='pendente').reduce((s,a)=>s+a.valor,0);
+  const totalVal = list.reduce((s,a)=>s+a.valor,0);
+  const pctExt   = total ? Math.round(ext/total*100) : 0;
+  const pctMan   = total ? Math.round(man/total*100) : 0;
+  const formas   = ['dinheiro','pix','cartao','permuta'];
+  const fLabels  = {dinheiro:'💵 Dinheiro', pix:'⚡ Pix', cartao:'💳 Cartão', permuta:'🔄 Permuta'};
+
+  if(total===0) {
+    document.getElementById('resumoContent').innerHTML = `<div class="empty"><div class="icon">📊</div>Nenhum atendimento em <strong>${label}</strong>.</div>`;
+    return;
+  }
+
+  const diasHtml = !dia ? (() => {
+    const dias = {};
+    list.forEach(a => { if(!dias[a.data]) dias[a.data]={qt:0,val:0}; dias[a.data].qt++; dias[a.data].val+=a.valor; });
+    return Object.entries(dias).sort((a,b)=>a[0].localeCompare(b[0])).map(([d,v]) => {
+      const dt = new Date(d+'T00:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'});
+      return `<div onclick="filtrarDia('${d}')" style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer">
+        <span style="color:var(--rose-dk)">📅 ${dt}</span>
+        <span>${v.qt} atend · <strong>R$ ${v.val.toFixed(2)}</strong> <span style="color:var(--rose);font-size:11px">ver›</span></span>
+      </div>`;
+    }).join('');
+  })() : '';
+
+  document.getElementById('resumoContent').innerHTML = `
+    <p style="font-size:11px;color:var(--muted);margin-bottom:14px;letter-spacing:.5px;text-transform:uppercase">
+      Período: <strong style="color:var(--rose-dk)">${label}</strong></p>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-val">${total}</div><div class="stat-label">Atendimentos</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--green);font-size:20px">R$${recebido.toFixed(2)}</div><div class="stat-label">Recebido</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--amber);font-size:20px">R$${pendente.toFixed(2)}</div><div class="stat-label">Pendente</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--rose-dk);font-size:20px">R$${totalVal.toFixed(2)}</div><div class="stat-label">Total faturado</div></div>
+    </div>
+    <p class="section-label">Procedimentos</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px"><span>Extensão</span><strong>${ext} (${pctExt}%)</strong></div>
+        <div style="height:8px;border-radius:4px;background:var(--border);overflow:hidden"><div class="proc-bar-fill" style="width:${pctExt}%;height:100%"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px"><span>Manutenção</span><strong>${man} (${pctMan}%)</strong></div>
+        <div style="height:8px;border-radius:4px;background:var(--border);overflow:hidden"><div class="proc-bar-fill man" style="width:${pctMan}%;height:100%"></div></div>
+      </div>
+    </div>
+    <p class="section-label">Formas de Pagamento</p>
+    ${formas.map(tp => {
+      const qt = list.filter(a=>a.pagamento===tp).length;
+      const vl = list.filter(a=>a.pagamento===tp).reduce((s,a)=>s+a.valor,0);
+      return qt>0 ? `<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <span>${fLabels[tp]}</span><span>${qt} atend · <strong>R$ ${vl.toFixed(2)}</strong></span></div>` : '';
+    }).join('')}
+    ${pendente>0 ? `<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:13px;color:var(--amber)">
+      <span>⏳ Pendente</span><span>${list.filter(a=>a.pagamento==='pendente').length} atend · <strong>R$ ${pendente.toFixed(2)}</strong></span></div>` : ''}
+    ${!dia ? `<p class="section-label">Atendimentos por Dia</p><div>${diasHtml}</div>` : ''}
+  `;
+}
+
+// ── TOAST ──
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+</script>
+</body>
+</html>
